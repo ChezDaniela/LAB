@@ -1,0 +1,76 @@
+Graylog VM:
+(following https://websiteforstudents.com/how-to-install-graylog-on-ubuntu-18-04-16-04/; thank you!...there are few updates as well)
+
+apt-get install openjdk-8-jre-headless apt-transport-https uuid-runtime dirmngr
+java -version
+
+#######commented out################################################################################################################
+####### wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+####### sudo sh -c 'echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" > /etc/apt/sources.list.d/elastic-7.x.list'
+#######commented out################################################################################################################
+
+Caution
+Graylog 3 does not work with Elasticsearch 7.x!
+Caution
+Graylog 3 does work with MongoDB 4.2 only in 4.0 compatibility mode !
+
+Because Graylog 3.x doesn't work with elasticsearch 7.x :-(
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+sudo sh -c 'echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" > /etc/apt/sources.list.d/elastic-6.x.list'
+
+apt update
+apt install elasticsearch
+
+systemctl start elasticsearch.service
+systemctl enable elasticsearch.service
+CHECK >>> systemctl status elasticsearch.service
+
+sudo nano /etc/elasticsearch/elasticsearch.yml
+	cluster.name: graylog
+	network.host: 0.0.0.0
+	# action.auto_create_index: false  >>> should be in but service won't start with this comment
+	action.auto_create_index: ".watches,.triggered_watches,.watcher-history-*"  <<< info via elasticsearch coredev; this works
+
+systemctl restart elasticsearch.service
+
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+
+apt update
+apt install mongodb-org
+
+sudo systemctl stop mongod.service
+sudo systemctl start mongod.service
+sudo systemctl enable mongod.service
+CHECK >>> sudo systemctl status mongod.service
+
+cd /tmp
+
+wget https://packages.graylog2.org/repo/packages/graylog-3.3-repository_latest.deb
+dpkg -i graylog-3.3-repository_latest.deb
+
+
+apt update
+apt install graylog-server
+
+cd /
+apt install pwgen
+pwgen -N 1 -s 96
+YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+password_secret = YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+
+
+root_username = <admin_of_some_sort>
+
+echo -n PGR9VUly4tUaxqCHrnEt | shasum -a 256
+ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ  -
+root_password_sha2 = ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+
+nano /etc/graylog/server/server.conf
+
+root_email = "your_email"
+
+http_bind_address = 127.0.0.1:9000
+
+sudo systemctl restart graylog-server
+CHECK >>> sudo systemctl status graylog-server
